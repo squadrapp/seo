@@ -1,0 +1,52 @@
+name: Deploy Urbix Laravel to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_mysql
+        coverage: none
+
+    - name: Install Composer Dependencies
+      run: composer install --prefer-dist --no-progress --no-interaction --no-dev
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install NPM Dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Install Webpack and CLI
+      run: npm install webpack webpack-cli --legacy-peer-deps --save-dev
+
+    - name: Build Assets
+      run: npm run build
+
+    - name: FTP Deploy
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        server-dir: /public_html/seo/
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+          .env
+          .env.example
